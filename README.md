@@ -22,11 +22,11 @@ We use the basic layout for Go application projects including `Go module`, it lo
 ├── Dockerfile
 ├── Makefile
 ├── README.md
-├── cmd     # main application for this project
-├── deploy  # kubernetes deploy files, such as Deployment, Service, Role
+├── cmd        # main application for this project
+├── deploy     # kubernetes deploy files, such as Deployment, Service, Role
 │   └── install.yaml
-├── go.mod  # go module file
-├── go.sum  # go module file
+├── go.mod     # go module file
+├── go.sum     # go module file
 └── pkg
 ```
 

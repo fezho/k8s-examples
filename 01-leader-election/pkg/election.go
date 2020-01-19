@@ -3,6 +3,9 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"os"
+	"time"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/kubernetes"
@@ -13,11 +16,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
-	"os"
-
 	"k8s.io/client-go/tools/record"
-
-	"time"
 )
 
 const (
@@ -87,6 +86,7 @@ func NewElectionWithKubeConfig(config *Config, kubeConfig *rest.Config) (*Electi
 	broadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: clientset.CoreV1().Events(config.LeaseLockNamespace)})
 	eventRecorder := broadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: config.ComponentName})
 
+	// Prepare resource lock
 	rl, err := resourcelock.New(
 		resourcelock.LeasesResourceLock,
 		config.LeaseLockNamespace,
@@ -100,6 +100,8 @@ func NewElectionWithKubeConfig(config *Config, kubeConfig *rest.Config) (*Electi
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create resource lock: %v", err)
 	}
+
+	// Prepare elector
 	le, err := leaderelection.NewLeaderElector(leaderelection.LeaderElectionConfig{
 		Lock:            rl,
 		LeaseDuration:   config.LeaseDuration,

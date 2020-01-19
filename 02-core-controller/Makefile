@@ -2,8 +2,8 @@ GO=go
 
 SRC = $(shell find . -type f -name '*.go' -not -path "./vendor/*")
 
-VERSION := v0.1.0
-TARGETS := demo
+VERSION := v0.1.2
+TARGETS := job
 project=github.com/fezho/k8s-examples
 
 all: check build
@@ -11,10 +11,10 @@ all: check build
 build: $(TARGETS) $(TEST_TARGETS)
 
 $(TARGETS): $(SRC)
-	$(GO) build $(project)/01-leader-election/cmd/$@
+	$(GO) build $(project)/02-core-controller/cmd/$@
 
 image:
-	docker build -t docker.pkg.github.com/fezho/k8s-examples/kube-leaderelection-demo:$(VERSION) .
+	docker build -t docker.pkg.github.com/fezho/k8s-examples/kube-core-controller:$(VERSION) .
 
 .PHONY: clean all build check image
 

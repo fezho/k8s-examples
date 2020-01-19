@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/spf13/pflag"
-	"github/fezho/k8s-examples/01-leader-election/pkg"
-	"k8s.io/client-go/tools/leaderelection"
 	"log"
 	"os"
+
+	"github.com/fezho/k8s-examples/01-leader-election/pkg"
+	"github.com/spf13/pflag"
+	"k8s.io/client-go/tools/leaderelection"
 )
 
 var (
@@ -16,7 +17,6 @@ var (
 	podName            = pflag.String("holder-identity", os.Getenv("POD_NAME"), "the holder identity name")
 	leaseLockName      = pflag.String("lease-lock-name", "", "the lease lock resource name")
 	leaseLockNamespace = pflag.String("lease-lock-namespace", os.Getenv("POD_NAMESPACE"), "the lease lock resource namespace")
-	version            = pflag.Bool("version", false, "Display the version.")
 )
 
 func main() {

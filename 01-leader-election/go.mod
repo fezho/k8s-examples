@@ -1,4 +1,4 @@
-module github/fezho/k8s-examples/01-leader-election
+module github.com/fezho/k8s-examples/01-leader-election
 
 go 1.12
 
