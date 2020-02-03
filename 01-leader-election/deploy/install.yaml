@@ -12,6 +12,8 @@ spec:
       labels:
         app: le-demo
     spec:
+      imagePullSecrets:
+        - name: regcred
       containers:
         - name: demo
           image: "docker.pkg.github.com/fezho/k8s-examples/kube-leaderelection-demo:v0.1.0"

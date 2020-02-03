@@ -3,10 +3,10 @@ This repositry contains a number of examples of how to program on Kubernetes. Th
 
 It includes following subjects:
  * [x] Leader Election
- * [ ] Custom Controller
+ * [x] Custom Controller
  * [ ] Custom Scheduler
  * [ ] CRD and Operator
- * [ ] CNI PluginG
+ * [ ] CNI Plugin
 
 ## Develop and Deploy
 

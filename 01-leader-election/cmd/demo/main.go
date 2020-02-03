@@ -3,12 +3,11 @@ package main
 import (
 	"context"
 	"flag"
+	"github.com/fezho/k8s-examples/01-leader-election/pkg/leaderelection"
 	"log"
 	"os"
 
-	"github.com/fezho/k8s-examples/01-leader-election/pkg"
 	"github.com/spf13/pflag"
-	"k8s.io/client-go/tools/leaderelection"
 )
 
 var (
@@ -23,14 +22,16 @@ func main() {
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
 
-	cfg := &pkg.Config{
+	// TODO: add 02's signal and context
+
+	cfg := &leaderelection.Config{
 		MemberID:           *podName,
 		ComponentName:      "demo",
 		LeaseLockName:      *leaseLockName,
 		LeaseLockNamespace: *leaseLockNamespace,
 		KubeMaster:         *kubemaster,
 		KubeConfig:         *kubeconfig,
-		Callbacks: leaderelection.LeaderCallbacks{
+		Callbacks: leaderelection.Callbacks{
 			OnStartedLeading: func(ctx context.Context) {
 				log.Printf("[INFO] %s: started leading", *podName)
 			},
@@ -43,7 +44,7 @@ func main() {
 		},
 	}
 
-	election, err := pkg.NewElection(cfg)
+	election, err := leaderelection.NewElection(cfg)
 	if err != nil {
 		log.Fatalf("faled to init election, error: %v\n", err)
 	}

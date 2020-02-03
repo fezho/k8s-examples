@@ -3,11 +3,10 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
+	"github.com/fezho/k8s-examples/01-leader-election/pkg/leaderelection"
 	"github.com/fezho/k8s-examples/02-core-controller/pkg/controller"
 	"github.com/fezho/k8s-examples/02-core-controller/pkg/signals"
 	"github.com/spf13/pflag"
@@ -18,16 +17,16 @@ import (
 )
 
 var (
-	kubemaster           = pflag.String("kubemaster", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
-	kubeconfig           = pflag.String("kubeconfig", filepath.Join(os.Getenv("HOME"), ".kube", "config"), "Absolute path to the kubeconfig file.")
-	resyncPeriod         = pflag.Duration("resync-period", 30*time.Second, "resync period for job informer")
-	retentionInSeconds   = pflag.Int64("retention", 864000, "the retention period in seconds after job is completed, default value is 10 days")
+	kubemaster         = pflag.String("kubemaster", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
+	kubeconfig         = pflag.String("kubeconfig", "", "Absolute path to the kubeconfig file.")
+	resyncPeriod       = pflag.Duration("resync-period", 60*time.Second, "resync period for job informer")
+	retentionInSeconds = pflag.Int64("retention", 864000, "the retention period in seconds after job is completed, default value is 10 days")
+
+	// for leader election
 	enableLeaderElection = pflag.Bool("leader-elect", false, "whether to run the controller with leader election for high availability")
-	/*
-		podName              = pflag.String("holder-identity", os.Getenv("POD_NAME"), "the holder identity name")
-		leaseLockName        = pflag.String("lease-lock-name", "", "the lease lock resource name")
-		leaseLockNamespace   = pflag.String("lease-lock-namespace", os.Getenv("POD_NAMESPACE"), "the lease lock resource namespace")
-	*/
+	podName              = pflag.String("holder-identity", os.Getenv("POD_NAME"), "the holder identity name")
+	leaseLockName        = pflag.String("lease-lock-name", "", "the lease lock resource name")
+	leaseLockNamespace   = pflag.String("lease-lock-namespace", os.Getenv("POD_NAMESPACE"), "the lease lock resource namespace")
 )
 
 func main() {
@@ -52,26 +51,49 @@ func main() {
 
 	// define the job controller running func
 	run := func(ctx context.Context, kubeClient clientset.Interface) {
-		sharedInformers := informers.NewSharedInformerFactory(kubeClient, *resyncPeriod)
-		jc := controller.NewJobController(kubeClient, sharedInformers.Batch().V1().Jobs(), *retentionInSeconds)
+		sharedInformersFactory := informers.NewSharedInformerFactory(kubeClient, *resyncPeriod)
+		jc := controller.NewJobController(kubeClient, sharedInformersFactory.Batch().V1().Jobs(), *retentionInSeconds)
 		// Start method is non-blocking and runs all registered informers in a dedicated goroutine.
-		sharedInformers.Start(ctx.Done())
+		sharedInformersFactory.Start(ctx.Done())
 		if err := jc.Run(1, ctx.Done()); err != nil {
 			klog.Fatal("failed to run job controller, ", err)
 		}
 	}
 
-	cfg, err := clientcmd.BuildConfigFromFlags(*kubemaster, *kubeconfig)
+	kubeConfig, err := clientcmd.BuildConfigFromFlags(*kubemaster, *kubeconfig)
 	if err != nil {
 		klog.Fatal("failed to build kubeconfig, ", err)
 	}
-	kubeClient := clientset.NewForConfigOrDie(cfg)
+	kubeClient := clientset.NewForConfigOrDie(kubeConfig)
 
 	if *enableLeaderElection {
-		// TODO: run with leader election
+		klog.Info("run job controller with leader election")
+		electionConfig := &leaderelection.Config{
+			MemberID:           *podName,
+			LeaseLockName:      *leaseLockName,
+			LeaseLockNamespace: *leaseLockNamespace,
+			LeaseDuration:      60 * time.Second, // the default value got error: failed to tryAcquireOrRenew context deadline exceeded
+			RenewDeadline:      45 * time.Second,
+			ComponentName:      "job-retention-controller",
+			Callbacks: leaderelection.Callbacks{
+				OnStartedLeading: func(ctx context.Context) {
+					klog.Infof("%s: leading", *podName)
+					run(ctx, kubeClient)
+				},
+				OnStoppedLeading: func() {
+					//cancel()
+					klog.Infof("%s: lost", *podName)
+				},
+			},
+		}
+		election, err := leaderelection.NewElectionWithKubeConfig(electionConfig, kubeConfig)
+		if err != nil {
+			klog.Fatalf("faled to init election, error: %v\n", err)
+		}
+		election.Run(ctx)
 	} else {
 		run(ctx, kubeClient)
 	}
 
-	fmt.Println("job controller is stopped")
+	klog.Info("job controller is stopped")
 }

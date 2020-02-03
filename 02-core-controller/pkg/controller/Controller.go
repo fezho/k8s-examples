@@ -22,10 +22,10 @@ type Controller struct {
 
 type HandleResource func(namespace, name string) error
 
-func NewController(name string, queue workqueue.RateLimitingInterface, handleResource HandleResource, cacheSyncs ...cache.InformerSynced) *Controller {
+func NewController(name string, handleResource HandleResource, cacheSyncs ...cache.InformerSynced) *Controller {
 	return &Controller{
 		Name:           name,
-		queue:          queue,
+		queue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), name),
 		handleResource: handleResource,
 		cacheSyncs:     cacheSyncs,
 	}
@@ -59,6 +59,11 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 	klog.Info("Shutting down workers")
 
 	return nil
+}
+
+// Queue returns the work queue for outside package usage.
+func (c *Controller) Queue() workqueue.RateLimitingInterface {
+	return c.queue
 }
 
 // runWorker executes the loop to process new items added to the queue

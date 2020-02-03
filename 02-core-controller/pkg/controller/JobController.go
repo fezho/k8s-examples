@@ -12,7 +12,6 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	batchv1listers "k8s.io/client-go/listers/batch/v1"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
 )
 
@@ -32,8 +31,7 @@ func NewJobController(kubeClient clientset.Interface, jobInformer batchinformers
 		retentionInSeconds: retentionInSeconds,
 	}
 
-	queue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "job-retention")
-	jc.Controller = NewController("job-retention", queue, jc.handleJob, jobInformer.Informer().HasSynced)
+	jc.Controller = NewController("job-retention", jc.handleJob, jobInformer.Informer().HasSynced)
 
 	jobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
@@ -80,7 +78,7 @@ func (c *JobController) handleJob(namespace, name string) error {
 	if time.Now().Unix()-job.Status.CompletionTime.Time.Unix() > c.retentionInSeconds {
 		err = c.deleteJobAndPods(namespace, name)
 		if err != nil {
-			klog.Errorf("failed to delete job %s/%s or its corresponding pods", namespace, name)
+			klog.Errorf("failed to delete job %s/%s or its corresponding pods, error: %v", namespace, name, err)
 			return err
 		} else {
 			klog.Infof("delete exceeded retention job %s/%s", namespace, name)

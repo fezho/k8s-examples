@@ -1,4 +1,4 @@
-package pkg
+package leaderelection
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"k8s.io/client-go/rest"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/leaderelection"
+	k8sleaderelection "k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/client-go/tools/record"
 )
@@ -27,7 +27,7 @@ const (
 
 type Election struct {
 	config  *Config
-	elector *leaderelection.LeaderElector
+	elector *k8sleaderelection.LeaderElector
 }
 
 type Config struct {
@@ -58,7 +58,18 @@ type Config struct {
 	KubeConfig string
 	// Callbacks are callbacks that are triggered during certain lifecycle
 	// events of the LeaderElector
-	Callbacks leaderelection.LeaderCallbacks
+	Callbacks Callbacks
+}
+
+type Callbacks struct {
+	// OnStartedLeading is called when a LeaderElector client starts leading
+	OnStartedLeading func(context.Context)
+	// OnStoppedLeading is called when a LeaderElector client stops leading. Actually it is called when every member dies.
+	OnStoppedLeading func()
+	// OnNewLeader is called when the client observes a leader that is
+	// not the previously observed leader. This includes the first observed
+	// leader when the client starts.
+	OnNewLeader func(identity string)
 }
 
 func NewElection(config *Config) (*Election, error) {
@@ -102,12 +113,16 @@ func NewElectionWithKubeConfig(config *Config, kubeConfig *rest.Config) (*Electi
 	}
 
 	// Prepare elector
-	le, err := leaderelection.NewLeaderElector(leaderelection.LeaderElectionConfig{
-		Lock:            rl,
-		LeaseDuration:   config.LeaseDuration,
-		RenewDeadline:   config.RenewDeadline,
-		RetryPeriod:     config.RetryPeriod,
-		Callbacks:       config.Callbacks,
+	le, err := k8sleaderelection.NewLeaderElector(k8sleaderelection.LeaderElectionConfig{
+		Lock:          rl,
+		LeaseDuration: config.LeaseDuration,
+		RenewDeadline: config.RenewDeadline,
+		RetryPeriod:   config.RetryPeriod,
+		Callbacks: k8sleaderelection.LeaderCallbacks{
+			OnStartedLeading: config.Callbacks.OnStartedLeading,
+			OnStoppedLeading: config.Callbacks.OnStoppedLeading,
+			OnNewLeader:      config.Callbacks.OnNewLeader,
+		},
 		ReleaseOnCancel: true,
 	})
 	if err != nil {

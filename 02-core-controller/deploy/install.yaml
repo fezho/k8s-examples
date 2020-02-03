@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: job-controller
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: controller
@@ -12,13 +12,16 @@ spec:
       labels:
         app: controller
     spec:
+      imagePullSecrets:
+        - name: regcred
       containers:
         - name: controller
-          image: registry.sensetime.com/fezho/kube-core-controller:v0.1.2-3
-          imagePullPolicy: IfNotPresent
+          image: docker.pkg.github.com/fezho/k8s-examples/kube-core-controller:v0.1.2
+          imagePullPolicy: Always
           command: ["/job" ]
           args:
-            - "retention=60"
+            - "--retention=60"
+            - "--leader-elect=true"
           env:
             - name: POD_NAME
               valueFrom:
