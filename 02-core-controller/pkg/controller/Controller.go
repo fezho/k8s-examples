@@ -72,7 +72,7 @@ func (c *Controller) runWorker() {
 	}
 }
 
-// processNextWorkItem will read a single work item off the workqueue and
+// processNextWorkItem will read a single work item off the work queue and
 // attempt to process it, by calling the syncHandler.
 func (c *Controller) processNextWorkItem() bool {
 	obj, shutdown := c.queue.Get()
@@ -87,16 +87,16 @@ func (c *Controller) processNextWorkItem() bool {
 		// processing this item. We also must remember to call Forget if we
 		// do not want this work item being re-queued. For example, we do
 		// not call Forget if a transient error occurs, instead the item is
-		// put back on the workqueue and attempted again after a back-off
+		// put back on the queue and attempted again after a back-off
 		// period.
 		defer c.queue.Done(obj)
 		var key string
 		var ok bool
 		// We expect strings to come off the queue. These are of the
 		// form namespace/name. We do this as the delayed nature of the
-		// workqueue means the items in the informer cache may actually be
+		// queue means the items in the informer cache may actually be
 		// more up to date that when the item was initially put onto the
-		// workqueue.
+		// queue.
 		if key, ok = obj.(string); !ok {
 			// As the item in the queue is actually invalid, we call
 			// Forget here else we'd go into a loop of attempting to

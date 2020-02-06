@@ -20,3 +20,9 @@ $ kubectl apply -f deploy/install.yaml
 $ kubectl create -f deploy/example.yaml
 ```
 
+## Link
+
+- [A deep dive into Kubernetes controllers](https://engineering.bitnami.com/articles/a-deep-dive-into-kubernetes-controllers.html)
+- [Create Controllers for Core and Custom Resources](https://medium.com/@trstringer/create-kubernetes-controllers-for-core-and-custom-resources-62fc35ad64a3)
+- [Repository for sample controller](https://github.com/kubernetes/sample-controller/blob/master/controller.go)
+

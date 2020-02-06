@@ -15,7 +15,7 @@ It includes following subjects:
 * Golang 1.12
 
 ### Project Layout
-We use the basic layout for Go application projects including `Go module`, it looks like:
+We use the basic layout for Go application projects including `Go module`, Dockerfile and Makefile, it looks like:
 
 ```
 .
@@ -36,6 +36,12 @@ We use the basic layout for Go application projects including `Go module`, it lo
 docker login -u USERNAME -p TOKEN docker.pkg.github.com
 make image
 docker push docker.pkg.github.com/fezho/k8s-examples/kube-xxx-demo:tag
+```
+
+### Deploy application to kubernetes
+We creates `Deployment`, `Role`, `ClusterRole` and other kubernetes resources to install our applications. In order to pull docker image, we also need to create a secret by following command:
+```console
+kubectl create secret docker-registry regcred --docker-server=docker.pkg.github.com --docker-username=user --docker-password=TOKEN --docker-email=xxx@xxx
 ```
 
 
