@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: custom-scheduler
+  labels:
+    app: custom-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: custom-scheduler
+  template:
+    metadata:
+      labels:
+        app: custom-scheduler
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      serviceAccount: custom-scheduler
+      containers:
+        - name: custom-scheduler
+          image: docker.pkg.github.com/fezho/k8s-examples/kube-custom-scheduler:v0.1.0
+          imagePullPolicy: Always
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: default
+  name: custom-scheduler
+  labels:
+    app: custom-scheduler
+    component: custom-scheduler
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: custom-scheduler
+subjects:
+  - kind: ServiceAccount
+    name: custom-scheduler
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: system:kube-scheduler
+
+

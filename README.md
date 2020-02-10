@@ -5,6 +5,7 @@ It includes following subjects:
  * [x] Leader Election
  * [x] Custom Controller
  * [ ] Custom Scheduler
+ * [ ] [Scheduler extender](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/scheduling/scheduler_extender.md)
  * [ ] CRD and Operator
  * [ ] CNI Plugin
 
